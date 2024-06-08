@@ -32,7 +32,13 @@ def get_nameserver_domains(API_KEY, nameserver, page=1):
     response = requests.get(url)
     print(f'GET {nameserver} #{page} {response.status_code}')
     data = json.loads(response.text)
-    count = int(data['response']['domain_count'])
+    try:
+        count = int(data['response']['domain_count'])
+    except KeyError:
+        if 'No domains found with that nameserver.<br><br>' in data['response']['error']:
+            print(f'Error: {data["response"]}')
+            return [], 0
+        print(f'Error: {data["response"]}')
     total_pages = int(data['response']['total_pages'])
     current_page = int(data['response']['current_page'])
     domains = data['response']['domains']
@@ -49,13 +55,16 @@ def main():
     balance = get_balance(API_KEY)
     print(f'Balance: {balance}')
 
-    nameserver = 'amy.ns.cloudflare.com'
+    nameserver = 'shaz.ns.cloudflare.com'
     domains, count = get_nameserver_domains(API_KEY, nameserver)
+    if count == 0:
+        print('No domains found.')
+        return
     print(f'Nameserver: {nameserver}')
     print(f'Count: {count}')
 
     # write to file
-    with open(f'{nameserver}-list.txt', 'w') as f:
+    with open(f'data/{nameserver}-list.txt', 'w') as f:
         f.write(f'Nameserver: {nameserver}\n')
         f.write(f'Count: {count}\n')
         f.write(f'Domains:\n')
